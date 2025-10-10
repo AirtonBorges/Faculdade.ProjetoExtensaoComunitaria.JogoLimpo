@@ -35,7 +35,7 @@ export class Game extends Scene {
         this.camera.setBackgroundColor(0x87ceeb);
 
         this.gameText = this.add
-            .text(512, 100, "Game Scene", {
+            .text(512, 100, "Pode arrastar!", {
                 font: "48px Arial",
                 color: "#000000",
             })
