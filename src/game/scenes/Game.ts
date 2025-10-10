@@ -8,7 +8,7 @@ export class Game extends Scene {
     gameText: Phaser.GameObjects.Text;
     images: Phaser.GameObjects.Image[] = [];
     timeElapsed: number = 0;
-    imagens = [
+    lixo = [
         "copo",
         "garrafa",
         "garrafa3",
@@ -19,13 +19,22 @@ export class Game extends Scene {
         "papel3",
     ];
 
+    lixeiras = ["lixeira-azul", "lixeira-verde", "lixeira-amarela", "lixeira-vermelha"];
+
+    ground: Phaser.GameObjects.Rectangle;
+
     constructor() {
         super("Game");
     }
 
     preload() {
         this.load.setPath("assets/lixo");
-        this.imagens.forEach(p => {
+        this.lixo.forEach(p => {
+            this.load.image(p, `${p}.png`);
+        });
+
+        this.load.setPath("assets/lixeiras");
+        this.lixeiras.forEach(p => {
             this.load.image(p, `${p}.png`);
         });
     }
@@ -33,6 +42,16 @@ export class Game extends Scene {
     create() {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x87ceeb);
+
+        const groundY = this.scale.height - 50;
+        this.ground = this.add.rectangle(0, groundY, this.scale.width * 2, 100, 0x228B22).setOrigin(0, 0);
+
+        this.lixeiras.forEach((lixeira, index) => {
+            const img = this.add.image(0, 0, lixeira).setOrigin(0.5);
+            img.setScale(0.2);
+            img.x = (index + 1) * (this.scale.width / (this.lixeiras.length + 1));
+            img.y = groundY;
+        });
 
         this.gameText = this.add
             .text(512, 100, "Pode arrastar!", {
@@ -111,10 +130,10 @@ export class Game extends Scene {
     createImage() {
         const maxX = this.scale.width - 100;
         const randomX = Phaser.Math.Between(0, maxX);
-        const randomIndex = Phaser.Math.Between(0, this.imagens.length - 1);
+        const randomIndex = Phaser.Math.Between(0, this.lixo.length - 1);
         const image = this.physics
             .add
-            .image(randomX, 0, this.imagens[randomIndex])
+            .image(randomX, 2, this.lixo[randomIndex])
             .setOrigin(0.5)
         ;
 
@@ -122,18 +141,28 @@ export class Game extends Scene {
         image.setInteractive();
         this.input.setDraggable(image);
 
-        if (typeof (image as any).setBounce === "function") {
-            (image as any).setBounce(0.2);
-        }
-        if (typeof (image as any).setCollideWorldBounds === "function") {
-            (image as any).setCollideWorldBounds(true);
-        }
+        image.setBounce(0.2);
+        image.setCollideWorldBounds(true);
 
+        image.body.onWorldBounds = true;
+        image.body.world.on
         this.images.push(image as unknown as Phaser.GameObjects.Image);
         if (this.images.length > 20) {
             const img = this.images.shift();
             img?.destroy();
         }
+
+        this.physics.world.on(
+            "worldbounds",
+            (body: Phaser.Physics.Arcade.Body) => {
+                if (body.blocked.down && body.gameObject === image) {
+
+                    image.destroy();
+                }
+            }
+        );
+
+
     }
 
     changeScene() {
