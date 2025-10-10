@@ -1,31 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jogo Limpo</title>
-  </head>
-  <body>
-    <main id="main">
-      <i
-        id="trash"
-        class="fa fa-trash fa-3x"
-        aria-hidden="true"
-        ondrop="dropped(event, this.id)"
-        ondragover="dragOver(event, this.id)"
-        ondragleave="stopDrop(event, this.id);"
-        ondragend="disableDrop(event);"
-      ></i>
 
-      <div id="drag1" draggable="true" ondragstart="dragStart(event)">
-        drag this
-      </div>
+<head>
+    <meta charset="utf-8">
+    <title>Phaser Angular Template</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+</head>
 
-      <div id="drag2" draggable="true" ondragstart="dragStart(event)">
-        drag this
-      </div>
-    </main>
-    <script type="module" src="index.ts"></script>
-  </body>
+<body>
+    <app-root></app-root>
+</body>
+
 </html>
