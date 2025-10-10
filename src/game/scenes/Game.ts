@@ -130,6 +130,10 @@ export class Game extends Scene {
         }
 
         this.images.push(image as unknown as Phaser.GameObjects.Image);
+        if (this.images.length > 20) {
+            const img = this.images.shift();
+            img?.destroy();
+        }
     }
 
     changeScene() {
