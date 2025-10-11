@@ -72,7 +72,7 @@ export class Game extends Scene {
         this.camera.setBackgroundColor(0x87ceeb);
         const groundY = this.scale.height >= this.defaultHeight
             ? this.scale.height
-            : this.scale.height + 100;
+            : this.scale.height + (((this.scale.height / 10) * 3));
 
         this.adicionaChao(groundY);
         this.adicionaLixeiras(groundY);
@@ -212,9 +212,12 @@ export class Game extends Scene {
             .image(randomX, 2, this.lixo[randomIndex])
             .setOrigin(0.5);
 
-        const escalaInicial = 0.4;
+        const escalaInicial = 0.3;
         const escala = this.escalarX(escalaInicial, this.screenWidth);
-        const escalaFinal = escala > escalaInicial ? escalaInicial : escala;
+        const escalaFinal = escala > escalaInicial
+            ? escalaInicial
+            : escala
+        ;
 
         image.setScale(escalaFinal);
         image.setInteractive();
