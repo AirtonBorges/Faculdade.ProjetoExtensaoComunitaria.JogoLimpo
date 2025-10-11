@@ -70,9 +70,7 @@ export class Game extends Scene {
     create() {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x87ceeb);
-        const groundY = this.scale.height >= this.defaultHeight
-            ? this.scale.height
-            : this.scale.height + (((this.scale.height / 10) * 3));
+        const groundY = this.scale.height;
 
         this.adicionaChao(groundY);
         this.adicionaLixeiras(groundY);
@@ -182,7 +180,6 @@ export class Game extends Scene {
         this.lixeiras.forEach((lixeira, index) => {
             const areaDeUmaLixeira = this.areaLixeiras / this.lixeiras.length;
             const posicaoX = inicio + (areaDeUmaLixeira * (index + 0.5));
-            const posicaoY = groundY;
 
             const img = this.add
                 .image(posicaoX, groundY, lixeira)
