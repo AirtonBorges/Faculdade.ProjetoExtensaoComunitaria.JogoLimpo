@@ -1,3 +1,4 @@
+import { ThisReceiver } from '@angular/compiler';
 import { Scene } from "phaser";
 
 import { EventBus } from "../EventBus";
@@ -29,13 +30,14 @@ export class Game extends Scene {
     ground: Phaser.GameObjects.Rectangle;
     screenWidth: number;
     screenHeight: number;
-    defaultResolution = 800;
     areaLixeiras: number;
+    defaultWidth = 800;
+    defaultHeight = 800;
     spawnInterval = 1000;
     maxLixos = 20;
-    dragStartTime: number = 0;
-    dragStartX: number = 0;
-    dragStartY: number = 0;
+    dragStartTime = 0;
+    dragStartX = 0;
+    dragStartY = 0;
     throwFactor = 0.5;
     maxThrowVelocity = 800;
 
@@ -50,10 +52,9 @@ export class Game extends Scene {
             this.screenHeight = parentNode.clientHeight;
         }
 
-        this.areaLixeiras = this.screenWidth > this.defaultResolution
-            ? this.defaultResolution
-            : this.screenWidth
-        ;
+        this.areaLixeiras = this.screenWidth > this.defaultWidth
+            ? this.defaultWidth
+            : this.screenWidth;
 
         this.load.setPath("assets/lixo");
         this.lixo.forEach((p) => {
@@ -69,7 +70,9 @@ export class Game extends Scene {
     create() {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x87ceeb);
-        const groundY = this.scale.height - 50;
+        const groundY = this.scale.height >= this.defaultHeight
+            ? this.scale.height
+            : this.scale.height + 100;
 
         this.adicionaChao(groundY);
         this.adicionaLixeiras(groundY);
@@ -139,11 +142,21 @@ export class Game extends Scene {
                     const dragDistanceX = pointer.x - this.dragStartX;
                     const dragDistanceY = pointer.y - this.dragStartY;
 
-                    const velocityX = (dragDistanceX / Math.max(dragTime, 1)) * this.throwFactor * 1000;
-                    const velocityY = (dragDistanceY / Math.max(dragTime, 1)) * this.throwFactor * 1000;
+                    const velocityX = (dragDistanceX / Math.max(dragTime, 1)) *
+                        this.throwFactor * 1000;
+                    const velocityY = (dragDistanceY / Math.max(dragTime, 1)) *
+                        this.throwFactor * 1000;
 
-                    const clampedVelocityX = Phaser.Math.Clamp(velocityX, -this.maxThrowVelocity, this.maxThrowVelocity);
-                    const clampedVelocityY = Phaser.Math.Clamp(velocityY, -this.maxThrowVelocity, this.maxThrowVelocity);
+                    const clampedVelocityX = Phaser.Math.Clamp(
+                        velocityX,
+                        -this.maxThrowVelocity,
+                        this.maxThrowVelocity,
+                    );
+                    const clampedVelocityY = Phaser.Math.Clamp(
+                        velocityY,
+                        -this.maxThrowVelocity,
+                        this.maxThrowVelocity,
+                    );
 
                     body.setVelocity(clampedVelocityX, clampedVelocityY);
                 }
@@ -169,10 +182,11 @@ export class Game extends Scene {
         this.lixeiras.forEach((lixeira, index) => {
             const areaDeUmaLixeira = this.areaLixeiras / this.lixeiras.length;
             const posicaoX = inicio + (areaDeUmaLixeira * (index + 0.5));
+            const posicaoY = groundY;
 
             const img = this.add
                 .image(posicaoX, groundY, lixeira)
-                .setOrigin(0.51, 0.5);
+                .setOrigin(0.51, 0.52);
 
             const escala = this.escalarX(escalaLixeiras, this.areaLixeiras);
             img.setScale(escala);
@@ -196,8 +210,7 @@ export class Game extends Scene {
         const image = this.physics
             .add
             .image(randomX, 2, this.lixo[randomIndex])
-            .setOrigin(0.5)
-        ;
+            .setOrigin(0.5);
 
         const escalaInicial = 0.4;
         const escala = this.escalarX(escalaInicial, this.screenWidth);
@@ -233,7 +246,7 @@ export class Game extends Scene {
     }
 
     private escalarX(x: number, tamanhoTela: number): number {
-        const retorno = (x * tamanhoTela) / this.defaultResolution;
+        const retorno = (x * tamanhoTela) / this.defaultWidth;
         return retorno;
     }
 }
