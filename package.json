@@ -4,7 +4,7 @@
     "description": "A Phaser 3 project template that demonstrates Angular communication.",
     "scripts": {
         "ng": "ng",
-        "dev": "node log dev & ng serve",
+        "start": "node log dev & ng serve",
         "build": "node log.js build & ng build --base-href='./'",
         "dev-nolog": "ng serve",
         "build-nolog": "ng build --base-href='./'"

@@ -19,22 +19,49 @@ export class Game extends Scene {
         "papel3",
     ];
 
-    lixeiras = ["lixeira-azul", "lixeira-verde", "lixeira-amarela", "lixeira-vermelha"];
+    lixeiras = [
+        "lixeira-azul",
+        "lixeira-verde",
+        "lixeira-amarela",
+        "lixeira-vermelha",
+    ];
 
     ground: Phaser.GameObjects.Rectangle;
+    screenWidth: number;
+    screenHeight: number;
+    defaultResolution = 800;
+    areaLixeiras: number;
+    spawnInterval = 1000;
+    maxLixos = 20;
+    dragStartTime: number = 0;
+    dragStartX: number = 0;
+    dragStartY: number = 0;
+    throwFactor = 0.5;
+    maxThrowVelocity = 800;
 
     constructor() {
         super("Game");
     }
 
     preload() {
+        const parentNode = this.sys.game.canvas.parentNode;
+        if (parentNode != null && parentNode instanceof HTMLElement) {
+            this.screenWidth = parentNode.clientWidth;
+            this.screenHeight = parentNode.clientHeight;
+        }
+
+        this.areaLixeiras = this.screenWidth > this.defaultResolution
+            ? this.defaultResolution
+            : this.screenWidth
+        ;
+
         this.load.setPath("assets/lixo");
-        this.lixo.forEach(p => {
+        this.lixo.forEach((p) => {
             this.load.image(p, `${p}.png`);
         });
 
         this.load.setPath("assets/lixeiras");
-        this.lixeiras.forEach(p => {
+        this.lixeiras.forEach((p) => {
             this.load.image(p, `${p}.png`);
         });
     }
@@ -42,24 +69,16 @@ export class Game extends Scene {
     create() {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x87ceeb);
-
         const groundY = this.scale.height - 50;
-        this.ground = this.add.rectangle(0, groundY, this.scale.width * 2, 100, 0x228B22).setOrigin(0, 0);
 
-        this.lixeiras.forEach((lixeira, index) => {
-            const img = this.add.image(0, 0, lixeira).setOrigin(0.5);
-            img.setScale(0.2);
-            img.x = (index + 1) * (this.scale.width / (this.lixeiras.length + 1));
-            img.y = groundY;
-        });
+        this.adicionaChao(groundY);
+        this.adicionaLixeiras(groundY);
+        this.configuraEventos();
 
-        this.gameText = this.add
-            .text(512, 100, "Pode arrastar!", {
-                font: "48px Arial",
-                color: "#000000",
-            })
-            .setOrigin(0.5);
+        EventBus.emit("current-scene-ready", this);
+    }
 
+    private configuraEventos() {
         this.input.on(
             "dragstart",
             (
@@ -73,6 +92,10 @@ export class Game extends Scene {
                     body.allowGravity = false;
                     body.setVelocity(0, 0);
                 }
+
+                this.dragStartTime = this.time.now;
+                this.dragStartX = pointer.x;
+                this.dragStartY = pointer.y;
             },
         );
 
@@ -111,33 +134,76 @@ export class Game extends Scene {
                     | undefined;
                 if (body) {
                     body.allowGravity = true;
-                    body.setVelocity(0, 0);
+
+                    const dragTime = this.time.now - this.dragStartTime;
+                    const dragDistanceX = pointer.x - this.dragStartX;
+                    const dragDistanceY = pointer.y - this.dragStartY;
+
+                    const velocityX = (dragDistanceX / Math.max(dragTime, 1)) * this.throwFactor * 1000;
+                    const velocityY = (dragDistanceY / Math.max(dragTime, 1)) * this.throwFactor * 1000;
+
+                    const clampedVelocityX = Phaser.Math.Clamp(velocityX, -this.maxThrowVelocity, this.maxThrowVelocity);
+                    const clampedVelocityY = Phaser.Math.Clamp(velocityY, -this.maxThrowVelocity, this.maxThrowVelocity);
+
+                    body.setVelocity(clampedVelocityX, clampedVelocityY);
                 }
             },
         );
+    }
 
-        EventBus.emit("current-scene-ready", this);
+    private adicionaChao(groundY: number) {
+        this.ground = this.add.rectangle(
+            0,
+            groundY,
+            this.scale.width * 2,
+            100,
+            0x228B22,
+        ).setOrigin(0, 0);
+    }
+
+    private adicionaLixeiras(groundY: number) {
+        const escalaLixeiras = 0.2;
+
+        const inicio = (this.sys.canvas.width / 2) - (this.areaLixeiras / 2);
+
+        this.lixeiras.forEach((lixeira, index) => {
+            const areaDeUmaLixeira = this.areaLixeiras / this.lixeiras.length;
+            const posicaoX = inicio + (areaDeUmaLixeira * (index + 0.5));
+
+            const img = this.add
+                .image(posicaoX, groundY, lixeira)
+                .setOrigin(0.51, 0.5);
+
+            const escala = this.escalarX(escalaLixeiras, this.areaLixeiras);
+            img.setScale(escala);
+        });
     }
 
     override update(time: number, delta: number): void {
         this.timeElapsed += delta;
-        if (this.timeElapsed >= 500) {
+        if (this.timeElapsed >= this.spawnInterval) {
             this.timeElapsed = 0;
-            this.createImage();
+            this.criarLixo();
         }
     }
 
-    createImage() {
-        const maxX = this.scale.width - 100;
-        const randomX = Phaser.Math.Between(0, maxX);
+    private criarLixo() {
+        const minX = this.scale.width / 2 - this.areaLixeiras / 2;
+        const maxX = minX + this.areaLixeiras;
+        const randomX = Phaser.Math.Between(minX, maxX);
         const randomIndex = Phaser.Math.Between(0, this.lixo.length - 1);
+
         const image = this.physics
             .add
             .image(randomX, 2, this.lixo[randomIndex])
             .setOrigin(0.5)
         ;
 
-        image.setScale(0.5);
+        const escalaInicial = 0.4;
+        const escala = this.escalarX(escalaInicial, this.screenWidth);
+        const escalaFinal = escala > escalaInicial ? escalaInicial : escala;
+
+        image.setScale(escalaFinal);
         image.setInteractive();
         this.input.setDraggable(image);
 
@@ -145,9 +211,9 @@ export class Game extends Scene {
         image.setCollideWorldBounds(true);
 
         image.body.onWorldBounds = true;
-        image.body.world.on
+        image.body.world.on;
         this.images.push(image as unknown as Phaser.GameObjects.Image);
-        if (this.images.length > 20) {
+        if (this.images.length > this.maxLixos) {
             const img = this.images.shift();
             img?.destroy();
         }
@@ -156,16 +222,18 @@ export class Game extends Scene {
             "worldbounds",
             (body: Phaser.Physics.Arcade.Body) => {
                 if (body.blocked.down && body.gameObject === image) {
-
                     image.destroy();
                 }
-            }
+            },
         );
-
-
     }
 
     changeScene() {
         this.scene.start("GameOver");
+    }
+
+    private escalarX(x: number, tamanhoTela: number): number {
+        const retorno = (x * tamanhoTela) / this.defaultResolution;
+        return retorno;
     }
 }
