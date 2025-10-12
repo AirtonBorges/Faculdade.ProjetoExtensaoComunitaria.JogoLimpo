@@ -1,7 +1,27 @@
-import { ThisReceiver } from '@angular/compiler';
+import { Collision } from 'matter';
 import { Scene } from "phaser";
 
 import { EventBus } from "../EventBus";
+
+const lixeiras = [
+    "lixeira-azul",
+    "lixeira-verde",
+    "lixeira-amarela",
+    "lixeira-vermelha",
+] as const;
+
+export const sons = {
+    lixoCerto: "acerto",
+    lixoErrado: "erro",
+} as const;
+
+export type lixeiraTipo = typeof lixeiras[number];
+export class Lixo {
+    tipo: lixeiraTipo;
+    nome: string;
+}
+
+export type lixeiraComTipo = Phaser.GameObjects.Image & { tipo: lixeiraTipo };
 
 export class Game extends Scene {
     camera: Phaser.Cameras.Scene2D.Camera;
@@ -9,37 +29,34 @@ export class Game extends Scene {
     gameText: Phaser.GameObjects.Text;
     images: Phaser.GameObjects.Image[] = [];
     timeElapsed: number = 0;
-    lixo = [
-        "copo",
-        "garrafa",
-        "garrafa3",
-        "latinha",
-        "latinha2",
-        "latinha3",
-        "papel2",
-        "papel3",
-    ];
 
-    lixeiras = [
-        "lixeira-azul",
-        "lixeira-verde",
-        "lixeira-amarela",
-        "lixeira-vermelha",
+    lixo: Lixo[] = [
+        { nome: "copo", tipo: "lixeira-vermelha" },
+        { nome: "garrafa", tipo: "lixeira-verde" },
+        { nome: "garrafa3", tipo: "lixeira-verde" },
+        { nome: "latinha", tipo: "lixeira-amarela" },
+        { nome: "latinha2", tipo: "lixeira-amarela" },
+        { nome: "latinha3", tipo: "lixeira-amarela" },
+        { nome: "papel2", tipo: "lixeira-azul" },
+        { nome: "papel3", tipo: "lixeira-azul" },
     ];
 
     ground: Phaser.GameObjects.Rectangle;
     screenWidth: number;
     screenHeight: number;
     areaLixeiras: number;
+
     defaultWidth = 800;
     defaultHeight = 800;
-    spawnInterval = 1000;
+    spawnInterval = 500;
     maxLixos = 20;
     dragStartTime = 0;
     dragStartX = 0;
     dragStartY = 0;
     throwFactor = 0.5;
     maxThrowVelocity = 800;
+
+    lixeiraObjetos: lixeiraComTipo[] = [];
 
     constructor() {
         super("Game");
@@ -58,13 +75,20 @@ export class Game extends Scene {
 
         this.load.setPath("assets/lixo");
         this.lixo.forEach((p) => {
-            this.load.image(p, `${p}.png`);
+            this.load.image(p.nome, `${p.nome}.png`);
         });
 
         this.load.setPath("assets/lixeiras");
-        this.lixeiras.forEach((p) => {
+        lixeiras.forEach((p) => {
             this.load.image(p, `${p}.png`);
         });
+
+        this.load.setPath("assets/sons");
+        const arquivoAcerto = "476178__unadamlar__correct-choice.wav";
+        const arquivoErro = "131657__bertrof__game-sound-wrong.wav";
+
+        this.load.audio(sons.lixoCerto, arquivoAcerto);
+        this.load.audio(sons.lixoErrado, arquivoErro);
     }
 
     create() {
@@ -177,16 +201,19 @@ export class Game extends Scene {
 
         const inicio = (this.sys.canvas.width / 2) - (this.areaLixeiras / 2);
 
-        this.lixeiras.forEach((lixeira, index) => {
-            const areaDeUmaLixeira = this.areaLixeiras / this.lixeiras.length;
+        lixeiras.forEach((lixeira, index) => {
+            const areaDeUmaLixeira = this.areaLixeiras / lixeiras.length;
             const posicaoX = inicio + (areaDeUmaLixeira * (index + 0.5));
 
             const img = this.add
                 .image(posicaoX, groundY, lixeira)
-                .setOrigin(0.51, 0.52);
+                .setOrigin(0.51, 0.52) as lixeiraComTipo;
 
             const escala = this.escalarX(escalaLixeiras, this.areaLixeiras);
             img.setScale(escala);
+            img.tipo = lixeira;
+            this.lixeiraObjetos.push(img);
+            this.physics.add.existing(img, true);
         });
     }
 
@@ -206,7 +233,7 @@ export class Game extends Scene {
 
         const image = this.physics
             .add
-            .image(randomX, 2, this.lixo[randomIndex])
+            .image(randomX, 2, this.lixo[randomIndex].nome)
             .setOrigin(0.5);
 
         const escalaInicial = 0.3;
@@ -239,6 +266,33 @@ export class Game extends Scene {
                 }
             },
         );
+
+        this.lixeiraObjetos.forEach((lixeira) => {
+            this.physics.add.collider(image, lixeira, (p, pS) => {
+                image.destroy();
+
+                if (this.lixo[randomIndex].tipo === lixeira.tipo) {
+                    lixeira.setTint(0x00ff00);
+                    lixeira.setScale(lixeira.scale * 1.05);
+                    this.sound.play(sons.lixoCerto);
+
+                    this.time.delayedCall(200, () => {
+                        lixeira.clearTint();
+                        lixeira.setScale(lixeira.scale / 1.05);
+                    });
+                }
+                else {
+                    lixeira.setTint(0xff0000);
+                    lixeira.setScale(lixeira.scale * 0.95);
+                    this.sound.play(sons.lixoErrado);
+
+                    this.time.delayedCall(200, () => {
+                        lixeira.clearTint();
+                        lixeira.setScale(lixeira.scale / 0.95);
+                    });
+                }
+            });
+        });
     }
 
     changeScene() {
