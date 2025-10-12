@@ -48,7 +48,7 @@ export class Game extends Scene {
 
     defaultWidth = 800;
     defaultHeight = 800;
-    spawnInterval = 500;
+    spawnInterval = 3000;
     maxLixos = 20;
     dragStartTime = 0;
     dragStartX = 0;
@@ -280,6 +280,11 @@ export class Game extends Scene {
                         lixeira.clearTint();
                         lixeira.setScale(lixeira.scale / 1.05);
                     });
+
+                    this.spawnInterval = this.spawnInterval * 0.95;
+                    if (this.spawnInterval < 500) {
+                        this.spawnInterval = 500;
+                    }
                 }
                 else {
                     lixeira.setTint(0xff0000);
@@ -290,6 +295,11 @@ export class Game extends Scene {
                         lixeira.clearTint();
                         lixeira.setScale(lixeira.scale / 0.95);
                     });
+
+                    this.spawnInterval = this.spawnInterval * 1.1;
+                    if (this.spawnInterval > 3000) {
+                        this.spawnInterval = 3000;
+                    }
                 }
             });
         });
