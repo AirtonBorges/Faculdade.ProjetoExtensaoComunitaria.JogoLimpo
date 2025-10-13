@@ -236,7 +236,7 @@ export class Game extends Scene {
             .image(randomX, 2, this.lixo[randomIndex].nome)
             .setOrigin(0.5);
 
-        const escalaInicial = 0.3;
+        const escalaInicial = 0.45;
         const escala = this.escalarX(escalaInicial, this.screenWidth);
         const escalaFinal = escala > escalaInicial
             ? escalaInicial
