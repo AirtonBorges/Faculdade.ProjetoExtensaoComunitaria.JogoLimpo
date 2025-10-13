@@ -16,6 +16,7 @@ export const sons = {
 } as const;
 
 export type lixeiraTipo = typeof lixeiras[number];
+
 export class Lixo {
     tipo: lixeiraTipo;
     nome: string;
@@ -31,14 +32,17 @@ export class Game extends Scene {
     timeElapsed: number = 0;
 
     lixo: Lixo[] = [
-        { nome: "copo", tipo: "lixeira-vermelha" },
-        { nome: "garrafa", tipo: "lixeira-verde" },
-        { nome: "garrafa3", tipo: "lixeira-verde" },
-        { nome: "latinha", tipo: "lixeira-amarela" },
-        { nome: "latinha2", tipo: "lixeira-amarela" },
-        { nome: "latinha3", tipo: "lixeira-amarela" },
-        { nome: "papel2", tipo: "lixeira-azul" },
-        { nome: "papel3", tipo: "lixeira-azul" },
+        { nome: "GarrafaDeVidro1SemFundo", tipo: "lixeira-verde" },
+        { nome: "GarrafaDeVidro2SemFundo", tipo: "lixeira-verde" },
+        { nome: "GarrafaDeVidro3SemFundo", tipo: "lixeira-verde" },
+        { nome: "Lata1SemFundo", tipo: "lixeira-amarela" },
+        { nome: "Lata2SemFundo", tipo: "lixeira-amarela" },
+        { nome: "Lata3SemFundo", tipo: "lixeira-amarela" },
+        { nome: "Papel2SemFundo", tipo: "lixeira-azul" },
+        { nome: "Papel3SemFundo", tipo: "lixeira-azul" },
+        { nome: "SacolaPlasticaSemFundo", tipo: "lixeira-vermelha" },
+        { nome: "TampaDeGarrafaSemFundoPlastico", tipo: "lixeira-vermelha" },
+        { nome: "CopoPlasticoSemFundo", tipo: "lixeira-vermelha" },
     ];
 
     ground: Phaser.GameObjects.Rectangle;
@@ -236,7 +240,7 @@ export class Game extends Scene {
             .image(randomX, 2, this.lixo[randomIndex].nome)
             .setOrigin(0.5);
 
-        const escalaInicial = 0.45;
+        const escalaInicial = 0.4;
         const escala = this.escalarX(escalaInicial, this.screenWidth);
         const escalaFinal = escala > escalaInicial
             ? escalaInicial
