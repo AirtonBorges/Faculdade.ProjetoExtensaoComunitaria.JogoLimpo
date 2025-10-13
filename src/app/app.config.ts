@@ -1,6 +1,7 @@
 import { ApplicationConfig, isDevMode, provideZoneChangeDetection } from "@angular/core";
 import { provideRouter } from "@angular/router";
-import { provideServiceWorker } from "@angular/service-worker";
+
+// import { routes } from "@angular/service-worker";
 
 import { routes } from "./app.routes";
 
@@ -8,9 +9,9 @@ export const appConfig: ApplicationConfig = {
     providers: [
         provideZoneChangeDetection({ eventCoalescing: true }),
         provideRouter(routes),
-        provideServiceWorker("ngsw-worker.js", {
-            enabled: false,
-            registrationStrategy: "registerWhenStable:30000",
-        }),
+        // provideServiceWorker("ngsw-worker.js", {
+        //     enabled: false,
+        //     registrationStrategy: "registerWhenStable:30000",
+        // }),
     ],
 };
