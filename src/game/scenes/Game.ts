@@ -1,9 +1,9 @@
 import { Scene } from "phaser";
 
 import { EventBus } from "../EventBus";
+import { Coracao } from "../gameObjects/Coracao";
 import { Lixeira, lixeiras } from "../gameObjects/Lixeira";
 import { Lixo, lixos } from "../gameObjects/Lixo";
-import { Coracao } from "../gameObjects/Coracao";
 
 export const sons = {
     lixoCerto: "acerto",
@@ -23,7 +23,7 @@ export class Game extends Scene {
     screenWidth: number;
     screenHeight: number;
     areaLixeiras: number;
-    vidas: number = 1;
+    vidas: number = 5;
     pontos: number = 0;
 
     defaultWidth = 800;
@@ -76,7 +76,6 @@ export class Game extends Scene {
 
     create() {
         this.camera = this.cameras.main;
-        this.camera.setBackgroundColor(0x87ceeb);
         const groundY = this.scale.height;
 
         this.adicionaChao(groundY);

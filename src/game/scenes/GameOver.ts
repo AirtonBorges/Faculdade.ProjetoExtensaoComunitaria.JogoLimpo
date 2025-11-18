@@ -24,7 +24,6 @@ export class GameOver extends Scene {
     create() {
         const centerX = this.camera.width / 2;
         const centerY = this.camera.height / 2;
-        this.camera.setBackgroundColor("#7f8a41");
 
         this.background = this.add.image(centerX, centerY, "background");
         let width = this.camera.width;
