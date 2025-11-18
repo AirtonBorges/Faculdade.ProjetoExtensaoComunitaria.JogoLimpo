@@ -1,28 +1,16 @@
-import { Collision } from 'matter';
 import { Scene } from "phaser";
 
 import { EventBus } from "../EventBus";
-
-const lixeiras = [
-    "lixeira-azul",
-    "lixeira-verde",
-    "lixeira-amarela",
-    "lixeira-vermelha",
-] as const;
+import { Lixeira, lixeiras } from "../gameObjects/Lixeira";
+import { Lixo, lixos } from "../gameObjects/Lixo";
+import { Coracao } from "../gameObjects/Coracao";
 
 export const sons = {
     lixoCerto: "acerto",
     lixoErrado: "erro",
 } as const;
 
-export type lixeiraTipo = typeof lixeiras[number];
-
-export class Lixo {
-    tipo: lixeiraTipo;
-    nome: string;
-}
-
-export type lixeiraComTipo = Phaser.GameObjects.Image & { tipo: lixeiraTipo };
+export const coracao = "coracao";
 
 export class Game extends Scene {
     camera: Phaser.Cameras.Scene2D.Camera;
@@ -31,24 +19,12 @@ export class Game extends Scene {
     images: Phaser.GameObjects.Image[] = [];
     timeElapsed: number = 0;
 
-    lixo: Lixo[] = [
-        { nome: "GarrafaDeVidro1SemFundo", tipo: "lixeira-verde" },
-        { nome: "GarrafaDeVidro2SemFundo", tipo: "lixeira-verde" },
-        { nome: "GarrafaDeVidro3SemFundo", tipo: "lixeira-verde" },
-        { nome: "Lata1SemFundo", tipo: "lixeira-amarela" },
-        { nome: "Lata2SemFundo", tipo: "lixeira-amarela" },
-        { nome: "Lata3SemFundo", tipo: "lixeira-amarela" },
-        { nome: "Papel2SemFundo", tipo: "lixeira-azul" },
-        { nome: "Papel3SemFundo", tipo: "lixeira-azul" },
-        { nome: "SacolaPlasticaSemFundo", tipo: "lixeira-vermelha" },
-        { nome: "TampaDeGarrafaSemFundoPlastico", tipo: "lixeira-vermelha" },
-        { nome: "CopoPlasticoSemFundo", tipo: "lixeira-vermelha" },
-    ];
-
     ground: Phaser.GameObjects.Rectangle;
     screenWidth: number;
     screenHeight: number;
     areaLixeiras: number;
+    vidas: number = 1;
+    pontos: number = 0;
 
     defaultWidth = 800;
     defaultHeight = 800;
@@ -58,9 +34,10 @@ export class Game extends Scene {
     dragStartX = 0;
     dragStartY = 0;
     throwFactor = 0.5;
-    maxThrowVelocity = 800;
+    maxThrowVelocity = 3000;
 
-    lixeiraObjetos: lixeiraComTipo[] = [];
+    lixeiraObjetos: Lixeira[] = [];
+    coracoes: Coracao[] = [];
 
     constructor() {
         super("Game");
@@ -78,7 +55,7 @@ export class Game extends Scene {
             : this.screenWidth;
 
         this.load.setPath("assets/lixo");
-        this.lixo.forEach((p) => {
+        lixos.forEach((p) => {
             this.load.image(p.nome, `${p.nome}.png`);
         });
 
@@ -86,6 +63,8 @@ export class Game extends Scene {
         lixeiras.forEach((p) => {
             this.load.image(p, `${p}.png`);
         });
+        this.load.setPath("assets");
+        this.load.image(coracao, "coracao.png");
 
         this.load.setPath("assets/sons");
         const arquivoAcerto = "476178__unadamlar__correct-choice.wav";
@@ -103,8 +82,20 @@ export class Game extends Scene {
         this.adicionaChao(groundY);
         this.adicionaLixeiras(groundY);
         this.configuraEventos();
+        this.configuraCoracoes();
 
         EventBus.emit("current-scene-ready", this);
+    }
+
+    private configuraCoracoes() {
+        const escalaCoracao = this.escalarX(0.03, this.screenWidth);
+        for (let i = 0; i < this.vidas; i++) {
+            const x = 10 + i * (2000 * escalaCoracao + 5);
+            const y = 10;
+            const item = new Coracao(this, x, y, coracao);
+            item.scale = escalaCoracao;
+            this.coracoes.push(item);
+        }
     }
 
     private configuraEventos() {
@@ -142,12 +133,7 @@ export class Game extends Scene {
                     | Phaser.Physics.Arcade.Body
                     | undefined;
                 if (body) {
-                    if (typeof body.reset === "function") {
-                        body.reset(dragX, dragY);
-                    } else {
-                        body.x = dragX;
-                        body.y = dragY;
-                    }
+                    body.reset(dragX, dragY);
                 }
             },
         );
@@ -209,15 +195,12 @@ export class Game extends Scene {
             const areaDeUmaLixeira = this.areaLixeiras / lixeiras.length;
             const posicaoX = inicio + (areaDeUmaLixeira * (index + 0.5));
 
-            const img = this.add
-                .image(posicaoX, groundY, lixeira)
-                .setOrigin(0.51, 0.52) as lixeiraComTipo;
+            const img = new Lixeira(this, posicaoX, groundY - 10, lixeira);
+            img.tipo = lixeira;
 
             const escala = this.escalarX(escalaLixeiras, this.areaLixeiras);
             img.setScale(escala);
-            img.tipo = lixeira;
             this.lixeiraObjetos.push(img);
-            this.physics.add.existing(img, true);
         });
     }
 
@@ -233,29 +216,22 @@ export class Game extends Scene {
         const minX = this.scale.width / 2 - this.areaLixeiras / 2;
         const maxX = minX + this.areaLixeiras;
         const randomX = Phaser.Math.Between(minX, maxX);
-        const randomIndex = Phaser.Math.Between(0, this.lixo.length - 1);
+        const randomIndex = Phaser.Math.Between(0, lixos.length - 1);
 
-        const image = this.physics
-            .add
-            .image(randomX, 2, this.lixo[randomIndex].nome)
-            .setOrigin(0.5);
+        const image = new Lixo(
+            this,
+            randomX,
+            2,
+            lixos[randomIndex].nome,
+            lixos[randomIndex].lixeiraTipo,
+        );
 
         const escalaInicial = 0.1;
         const escala = this.escalarX(escalaInicial, this.screenWidth);
-        const escalaFinal = escala > escalaInicial
-            ? escalaInicial
-            : escala
-        ;
+        const escalaFinal = escala > escalaInicial ? escalaInicial : escala;
 
         image.setScale(escalaFinal);
-        image.setInteractive();
-        this.input.setDraggable(image);
 
-        image.setBounce(0.2);
-        image.setCollideWorldBounds(true);
-
-        image.body.onWorldBounds = true;
-        image.body.world.on;
         this.images.push(image as unknown as Phaser.GameObjects.Image);
         if (this.images.length > this.maxLixos) {
             const img = this.images.shift();
@@ -273,40 +249,64 @@ export class Game extends Scene {
 
         this.lixeiraObjetos.forEach((lixeira) => {
             this.physics.add.collider(image, lixeira, (p, pS) => {
+                const tipo = image.lixeiraTipo;
                 image.destroy();
 
-                if (this.lixo[randomIndex].tipo === lixeira.tipo) {
-                    lixeira.setTint(0x00ff00);
-                    lixeira.setScale(lixeira.scale * 1.05);
-                    this.sound.play(sons.lixoCerto);
-
-                    this.time.delayedCall(200, () => {
-                        lixeira.clearTint();
-                        lixeira.setScale(lixeira.scale / 1.05);
-                    });
-
-                    this.spawnInterval = this.spawnInterval * 0.95;
-                    if (this.spawnInterval < 500) {
-                        this.spawnInterval = 500;
-                    }
-                }
-                else {
-                    lixeira.setTint(0xff0000);
-                    lixeira.setScale(lixeira.scale * 0.95);
-                    this.sound.play(sons.lixoErrado);
-
-                    this.time.delayedCall(200, () => {
-                        lixeira.clearTint();
-                        lixeira.setScale(lixeira.scale / 0.95);
-                    });
-
-                    this.spawnInterval = this.spawnInterval * 1.1;
-                    if (this.spawnInterval > 3000) {
-                        this.spawnInterval = 3000;
-                    }
+                if (tipo === lixeira.tipo) {
+                    this.acerto(lixeira);
+                } else {
+                    this.erro(lixeira);
                 }
             });
         });
+    }
+
+    private acerto(lixeira: Lixeira)
+    {
+        lixeira.setTint(0x00ff00);
+        lixeira.setScale(lixeira.scale * 1.05);
+        this.sound.play(sons.lixoCerto);
+
+        this.time.delayedCall(200, () =>
+        {
+            lixeira.clearTint();
+            lixeira.setScale(lixeira.scale / 1.05);
+        });
+
+        this.spawnInterval = this.spawnInterval * 0.95;
+        if (this.spawnInterval < 500)
+        {
+            this.spawnInterval = 500;
+        }
+    }
+
+    private erro(lixeira: Lixeira)
+    {
+        lixeira.setTint(0xff0000);
+        lixeira.setScale(lixeira.scale * 0.95);
+        this.sound.play(sons.lixoErrado);
+        this.vidas -= 1;
+        const coracaoParaRemover = this.coracoes.pop();
+        coracaoParaRemover?.apagar();
+
+        this.time.delayedCall(200, () =>
+        {
+            lixeira.clearTint();
+            lixeira.setScale(lixeira.scale / 0.95);
+        });
+
+        this.spawnInterval = this.spawnInterval * 1.1;
+        if (this.spawnInterval > 3000)
+        {
+            this.spawnInterval = 3000;
+        }
+
+        if (this.vidas <= 0)
+        {
+            this.time.delayedCall(1000, () => {
+                this.changeScene();
+            });
+        }
     }
 
     changeScene() {
