@@ -27,8 +27,8 @@ export class GameOver extends Scene {
 
         this.background = this.add.image(centerX, centerY, "background");
         let width = this.camera.width;
-        if (width > 600) {
-            width = 600;
+        if (width > 500) {
+            width = 500;
         }
 
         this.background.setDisplaySize(width, this.camera.height);
