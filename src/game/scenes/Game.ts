@@ -87,9 +87,11 @@ export class Game extends Scene {
     }
 
     private configuraCoracoes() {
-        const escalaCoracao = this.escalarX(0.03, this.screenWidth);
+        const escalaCoracao = this.escalarX(0.05, this.screenWidth);
+        const localCoracoes = this.camera.width - this.areaLixeiras;
+
         for (let i = 0; i < this.vidas; i++) {
-            const x = 10 + i * (2000 * escalaCoracao + 5);
+            const x = localCoracoes + i * (2000 * escalaCoracao + 5);
             const y = 10;
             const item = new Coracao(this, x, y, coracao);
             item.scale = escalaCoracao;
