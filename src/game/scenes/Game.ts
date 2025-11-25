@@ -217,8 +217,8 @@ export class Game extends Scene {
     }
 
     private criarLixo() {
-        const minX = this.scale.width / 2 - this.areaLixeiras / 2;
-        const maxX = minX + this.areaLixeiras;
+        const minX = (this.scale.width / 2 - this.areaLixeiras / 2) + 10;
+        const maxX = (minX + this.areaLixeiras) - 10;
         const randomX = Phaser.Math.Between(minX, maxX);
         const randomIndex = Phaser.Math.Between(0, lixos.length - 1);
 
