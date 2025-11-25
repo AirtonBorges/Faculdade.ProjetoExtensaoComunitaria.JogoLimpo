@@ -83,15 +83,18 @@ export class Game extends Scene {
         this.configuraEventos();
         this.configuraCoracoes();
 
+        this.criaGameText();
+
         EventBus.emit("current-scene-ready", this);
     }
 
     private configuraCoracoes() {
-        const escalaCoracao = this.escalarX(0.05, this.screenWidth);
-        const localCoracoes = this.camera.width - this.areaLixeiras;
+        let escalaCoracao = this.escalarX(0.04, this.screenWidth);
+        escalaCoracao = escalaCoracao < 0.04 ? escalaCoracao : 0.04;
+        const coracoesX = ((this.camera.width - this.areaLixeiras) / 2) + 10;
 
         for (let i = 0; i < this.vidas; i++) {
-            const x = localCoracoes + i * (2000 * escalaCoracao + 5);
+            const x = coracoesX + i * (2000 * escalaCoracao + 5);
             const y = 10;
             const item = new Coracao(this, x, y, coracao);
             item.scale = escalaCoracao;
@@ -222,7 +225,7 @@ export class Game extends Scene {
         const image = new Lixo(
             this,
             randomX,
-            2,
+            50,
             lixos[randomIndex].nome,
             lixos[randomIndex].lixeiraTipo,
         );
@@ -262,27 +265,26 @@ export class Game extends Scene {
         });
     }
 
-    private acerto(lixeira: Lixeira)
-    {
+    private acerto(lixeira: Lixeira) {
         lixeira.setTint(0x00ff00);
         lixeira.setScale(lixeira.scale * 1.05);
         this.sound.play(sons.lixoCerto);
 
-        this.time.delayedCall(200, () =>
-        {
+        this.time.delayedCall(200, () => {
             lixeira.clearTint();
             lixeira.setScale(lixeira.scale / 1.05);
         });
 
         this.spawnInterval = this.spawnInterval * 0.95;
-        if (this.spawnInterval < 500)
-        {
+        if (this.spawnInterval < 500) {
             this.spawnInterval = 500;
         }
+        // pontuação por acerto
+        this.pontos += 10;
+        this.atualizaGameText();
     }
 
-    private erro(lixeira: Lixeira)
-    {
+    private erro(lixeira: Lixeira) {
         lixeira.setTint(0xff0000);
         lixeira.setScale(lixeira.scale * 0.95);
         this.sound.play(sons.lixoErrado);
@@ -290,20 +292,17 @@ export class Game extends Scene {
         const coracaoParaRemover = this.coracoes.pop();
         coracaoParaRemover?.apagar();
 
-        this.time.delayedCall(200, () =>
-        {
+        this.time.delayedCall(200, () => {
             lixeira.clearTint();
             lixeira.setScale(lixeira.scale / 0.95);
         });
 
         this.spawnInterval = this.spawnInterval * 1.1;
-        if (this.spawnInterval > 3000)
-        {
+        if (this.spawnInterval > 3000) {
             this.spawnInterval = 3000;
         }
 
-        if (this.vidas <= 0)
-        {
+        if (this.vidas <= 0) {
             this.time.delayedCall(1000, () => {
                 this.changeScene();
             });
@@ -311,7 +310,42 @@ export class Game extends Scene {
     }
 
     changeScene() {
-        this.scene.start("GameOver");
+        this.scene.start("GameOver", { score: this.pontos });
+    }
+
+    private criaGameText() {
+        const fontSize =
+            Math.round(
+                this.escalarX(60 / this.defaultWidth, this.screenWidth) *
+                    this.defaultWidth,
+            ) || 24;
+
+        const style: Phaser.Types.GameObjects.Text.TextStyle = {
+            fontFamily: "Arial",
+            fontSize: `${fontSize}px`,
+            color: "#ffffff",
+            shadow: {
+                offsetX: 2,
+                offsetY: 2,
+                color: "#000000",
+                blur: 5,
+            },
+        };
+
+        const x = 10;
+        this.gameText = this.add.text(x, 10, `Pontos: ${this.pontos}`, style)
+            .setOrigin(0, 0);
+        const alturaCoracao = this.coracoes[0].displayHeight;
+
+        this.gameText.y = alturaCoracao * 2 - 15;
+        this.gameText.x = ((this.camera.width - this.areaLixeiras) / 2) + 10;
+        this.gameText.setDepth(0);
+    }
+
+    private atualizaGameText() {
+        if (this.gameText) {
+            this.gameText.setText(`Pontos: ${this.pontos}`);
+        }
     }
 
     private escalarX(x: number, tamanhoTela: number): number {

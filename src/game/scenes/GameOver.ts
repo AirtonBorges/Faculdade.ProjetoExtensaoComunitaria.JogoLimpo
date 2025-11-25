@@ -6,10 +6,15 @@ export class GameOver extends Scene {
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
     gameOverText: Phaser.GameObjects.Text;
+    finalScore: number = 0;
     urlForm: string = "https://forms.office.com/r/6RXFuNMRED";
 
     constructor() {
         super("GameOver");
+    }
+
+    init(data: any) {
+        this.finalScore = data && typeof data.score === 'number' ? data.score : 0;
     }
 
     preload() {
@@ -51,6 +56,24 @@ export class GameOver extends Scene {
                     offsetY: 5,
                     color: "#000000",
                     blur: 10,
+                },
+            },
+        ).setOrigin(0.5);
+
+        // exibe a pontuação final
+        this.add.text(
+            centerX,
+            centerY - 10,
+            `Pontos: ${this.finalScore}`,
+            {
+                fontFamily: "Arial",
+                fontSize: "36px",
+                color: "#ffffff",
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: "#000000",
+                    blur: 5,
                 },
             },
         ).setOrigin(0.5);
