@@ -15,7 +15,7 @@ export const coracao = "coracao";
 export class Game extends Scene {
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
-    gameText: Phaser.GameObjects.Text;
+    pontuacao: Phaser.GameObjects.Text;
     images: Phaser.GameObjects.Image[] = [];
     timeElapsed: number = 0;
 
@@ -83,7 +83,7 @@ export class Game extends Scene {
         this.configuraEventos();
         this.configuraCoracoes();
 
-        this.criaGameText();
+        this.configuraPontuacao();
 
         EventBus.emit("current-scene-ready", this);
     }
@@ -279,7 +279,7 @@ export class Game extends Scene {
         if (this.spawnInterval < 500) {
             this.spawnInterval = 500;
         }
-        // pontuação por acerto
+
         this.pontos += 10;
         this.atualizaGameText();
     }
@@ -313,16 +313,12 @@ export class Game extends Scene {
         this.scene.start("GameOver", { score: this.pontos });
     }
 
-    private criaGameText() {
-        const fontSize =
-            Math.round(
-                this.escalarX(60 / this.defaultWidth, this.screenWidth) *
-                    this.defaultWidth,
-            ) || 24;
+    private configuraPontuacao() {
+        const tamanhoTexto = this.escalarX(100, this.screenWidth, 30);
 
         const style: Phaser.Types.GameObjects.Text.TextStyle = {
             fontFamily: "Arial",
-            fontSize: `${fontSize}px`,
+            fontSize: `${tamanhoTexto}px`,
             color: "#ffffff",
             shadow: {
                 offsetX: 2,
@@ -333,23 +329,29 @@ export class Game extends Scene {
         };
 
         const x = 10;
-        this.gameText = this.add.text(x, 10, `Pontos: ${this.pontos}`, style)
+        this.pontuacao = this.add.text(x, 10, `Pontos: ${this.pontos}`, style)
             .setOrigin(0, 0);
         const alturaCoracao = this.coracoes[0].displayHeight;
 
-        this.gameText.y = alturaCoracao * 2 - 15;
-        this.gameText.x = ((this.camera.width - this.areaLixeiras) / 2) + 10;
-        this.gameText.setDepth(0);
+        this.pontuacao.y = alturaCoracao + alturaCoracao / 2;
+        this.pontuacao.x = ((this.camera.width - this.areaLixeiras) / 2) + 10;
+        this.pontuacao.setDepth(0);
     }
 
     private atualizaGameText() {
-        if (this.gameText) {
-            this.gameText.setText(`Pontos: ${this.pontos}`);
+        if (this.pontuacao) {
+            this.pontuacao.setText(`Pontos: ${this.pontos}`);
         }
     }
 
-    private escalarX(x: number, tamanhoTela: number): number {
-        const retorno = (x * tamanhoTela) / this.defaultWidth;
+    private escalarX(x: number, tamanhoTela: number, max?: number): number {
+        const escala = (x * tamanhoTela) / this.defaultWidth;
+        if (max) {
+            const retorno = escala < max ? escala : max;
+            return retorno;
+        }
+
+        const retorno = escala;
         return retorno;
     }
 }
